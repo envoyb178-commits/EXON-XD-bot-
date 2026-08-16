@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EXON XD BOT - Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .dashboard {
+            max-width: 1100px;
+            width: 100%;
+            background: #12121a;
+            border-radius: 24px;
+            padding: 28px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+            border: 1px solid #2a2a3a;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 28px;
+            border-bottom: 1px solid #2a2a3a;
+            padding-bottom: 18px;
+        }
+        .logo h1 {
+            font-size: 26px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #f7971e, #ffd200);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+        .logo span { font-size: 14px; color: #888; display: block; -webkit-text-fill-color: #888; }
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #1e1e2e;
+            padding: 10px 20px;
+            border-radius: 40px;
+            border: 1px solid #333;
+        }
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff4757;
+            transition: background 0.3s;
+        }
+        .status-dot.online { background: #2ed573; }
+        .status-text { font-weight: 600; font-size: 15px; }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 28px;
+        }
+        @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+        .card {
+            background: #181822;
+            border-radius: 16px;
+            padding: 20px 22px;
+            border: 1px solid #2a2a3a;
+            transition: border-color 0.2s;
+        }
+        .card:hover { border-color: #3a3a4a; }
+        .card-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 14px;
+        }
+        .card-title i { margin-right: 8px; }
+        .pair-section {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .pair-section input {
+            flex: 1;
+            min-width: 160px;
+            background: #0f0f18;
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 12px 16px;
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+            transition: border 0.2s;
+        }
+        .pair-section input:focus { border-color: #f7971e; }
+        .btn {
+            background: #2a2a3e;
+            border: none;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn:hover { background: #3a3a52; transform: scale(1.02); }
+        .btn-primary { background: linear-gradient(135deg, #f7971e, #ffd200); color: #0a0a0f; }
+        .btn-primary:hover { background: linear-gradient(135deg, #e08a0e, #f0c000); }
+        .btn-danger { background: #e74c3c; }
+        .btn-danger:hover { background: #c0392b; }
+        .btn-success { background: #2ed573; color: #0a0a0f; }
+        .btn-success:hover { background: #26b865; }
+        .btn-sm { padding: 8px 16px; font-size: 13px; }
+        .console-box {
+            background: #0a0a12;
+            border-radius: 12px;
+            padding: 16px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.7;
+            border: 1px solid #1a1a2a;
+            margin-top: 8px;
+        }
+        .console-box .log-entry { padding: 2px 0; border-bottom: 1px solid #111; }
+        .console-box .log-info { color: #7fdbff; }
+        .console-box .log-success { color: #2ed573; }
+        .console-box .log-error { color: #ff6b6b; }
+        .console-box .log-warning { color: #feca57; }
+        .console-box::-webkit-scrollbar { width: 5px; }
+        .console-box::-webkit-scrollbar-track { background: #0a0a12; }
+        .console-box::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        .pair-code-display {
+            background: #0f0f18;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            color: #ffd200;
+            border: 1px dashed #444;
+            margin-top: 12px;
+            font-family: 'Courier New', monospace;
+        }
+        .pair-code-display.empty { color: #555; font-size: 16px; font-weight: 400; }
+        .stats-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: space-around;
+        }
+        .stat-item {
+            text-align: center;
+            background: #0f0f18;
+            padding: 12px 24px;
+            border-radius: 12px;
+            min-width: 80px;
+        }
+        .stat-item .num { font-size: 28px; font-weight: 700; color: #fff; }
+        .stat-item .label { font-size: 12px; color: #888; text-transform: uppercase; }
+        .flex { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .mt-12 { margin-top: 12px; }
+        .mb-12 { margin-bottom: 12px; }
+        .footer {
+            text-align: center;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid #1a1a2a;
+            font-size: 13px;
+            color: #555;
+        }
+        .footer strong { color: #f7971e; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        .pulsing { animation: pulse 1.2s ease-in-out infinite; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <div class="header">
+        <div class="logo">
+            <h1>⚡ EXON XD</h1>
+            <span>WhatsApp Bot Dashboard</span>
+        </div>
+        <div class="status-badge">
+            <div class="status-dot" id="statusDot"></div>
+            <span class="status-text" id="statusText">Disconnected</span>
+            <span style="color:#666;font-size:13px;" id="userIdDisplay">—</span>
+        </div>
+    </div>
+
+    <div class="grid">
+        <!-- Pairing -->
+        <div class="card">
+            <div class="card-title">📱 Pair New Device</div>
+            <div class="pair-section">
+                <input type="text" id="phoneInput" placeholder="26377xxxxxx" />
+                <button class="btn btn-primary" id="pairBtn">🔗 Pair</button>
+                <button class="btn btn-danger" id="logoutBtn">🚪 Logout</button>
+            </div>
+            <div class="pair-code-display empty" id="pairCodeDisplay">Waiting for pairing code...</div>
+            <div class="flex mt-12">
+                <button class="btn btn-success btn-sm" id="refreshStatusBtn">🔄 Refresh Status</button>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="card">
+            <div class="card-title">📊 Bot Status</div>
+            <div class="stats-row">
+                <div class="stat-item">
+                    <div class="num" id="totalSessions">0</div>
+                    <div class="label">Total Sessions</div>
+                </div>
+                <div class="stat-item">
+                    <div class="num" id="activeSessions">0</div>
+                    <div class="label">Active</div>
+                </div>
+                <div class="stat-item">
+                    <div class="num" id="uptimeDisplay">0s</div>
+                    <div class="label">Uptime</div>
+                </div>
+            </div>
+            <div class="mt-12" style="font-size:14px;color:#888;">
+                <span id="botMode">Mode: PRIVATE</span> &bull;
+                <span id="botAI">AI: OFF</span> &bull;
+                <span id="botReact">Auto-React: OFF</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Console -->
+    <div class="card" style="margin-bottom:8px;">
+        <div class="card-title">📜 Live Console</div>
+        <div class="console-box" id="consoleBox">
+            <div class="log-entry log-info">⏳ Waiting for logs...</div>
+        </div>
+        <div class="flex mt-12">
+            <button class="btn btn-sm" id="clearConsoleBtn">🧹 Clear</button>
+        </div>
+    </div>
+
+    <div class="footer">
+        Powered by <strong>EXON XD SIR</strong> &bull; v5.0 &bull; 
+        <span id="footerTime"></span>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    // ----- DOM refs -----
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const userIdDisplay = document.getElementById('userIdDisplay');
+    const pairCodeDisplay = document.getElementById('pairCodeDisplay');
+    const consoleBox = document.getElementById('consoleBox');
+    const totalSessions = document.getElementById('totalSessions');
+    const activeSessions = document.getElementById('activeSessions');
+    const uptimeDisplay = document.getElementById('uptimeDisplay');
+    const botMode = document.getElementById('botMode');
+    const botAI = document.getElementById('botAI');
+    const botReact = document.getElementById('botReact');
+
+    const phoneInput = document.getElementById('phoneInput');
+    const pairBtn = document.getElementById('pairBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const refreshStatusBtn = document.getElementById('refreshStatusBtn');
+    const clearConsoleBtn = document.getElementById('clearConsoleBtn');
+
+    // ----- State -----
+    let userId = localStorage.getItem('exonUserId') || 'user_' + Date.now().toString(36);
+    localStorage.setItem('exonUserId', userId);
+    userIdDisplay.textContent = userId;
+
+    let socket = null;
+    let connected = false;
+    let pairCodeTimeout = null;
+    let startTime = Date.now();
+
+    // ----- Socket init -----
+    function initSocket() {
+        if (socket) socket.disconnect();
+        socket = io({ transports: ['websocket', 'polling'] });
+
+        socket.on('connect', () => {
+            console.log('🔌 Socket connected');
+            socket.emit('set-user', userId);
+            addLog('🔌 Connected to server', 'info');
+        });
+
+        socket.on('disconnect', () => {
+            console.log('🔌 Socket disconnected');
+            setStatus(false);
+            addLog('🔌 Disconnected from server', 'warning');
+        });
+
+        socket.on('connection-status', (data) => {
+            setStatus(data.connected);
+            if (data.connected) {
+                addLog('✅ Bot is ONLINE', 'success');
+                pairCodeDisplay.textContent = '✅ Connected';
+                pairCodeDisplay.className = 'pair-code-display';
+            } else {
+                addLog('🔴 Bot is OFFLINE', 'error');
+                pairCodeDisplay.textContent = '⏳ Offline';
+                pairCodeDisplay.className = 'pair-code-display empty';
+            }
+        });
+
+        socket.on('pairing-code', (code) => {
+            pairCodeDisplay.textContent = code || '⚠️ No code received';
+            pairCodeDisplay.className = 'pair-code-display';
+            addLog('🔑 Pairing code: ' + code, 'success');
+            if (pairCodeTimeout) clearTimeout(pairCodeTimeout);
+            pairCodeTimeout = setTimeout(() => {
+                if (pairCodeDisplay.textContent === code) {
+                    pairCodeDisplay.textContent = '⏳ Code expired';
+                    pairCodeDisplay.className = 'pair-code-display empty';
+                }
+            }, 60000);
+        });
+
+        socket.on('pairing-error', (data) => {
+            addLog('❌ Pairing error: ' + (data.error || 'Unknown'), 'error');
+            pairCodeDisplay.textContent = '❌ ' + (data.error || 'Error');
+            pairCodeDisplay.className = 'pair-code-display empty';
+        });
+
+        socket.on('console', (log) => {
+            addLog(log.message, log.type || 'info');
+        });
+
+        socket.on('total-active', (count) => {
+            activeSessions.textContent = count || 0;
+        });
+
+        // Update total sessions from any source
+        socket.on('sessions-update', (data) => {
+            if (data && data.total !== undefined) {
+                totalSessions.textContent = data.total;
+            }
+        });
+    }
+
+    // ----- Helpers -----
+    function setStatus(isOnline) {
+        connected = isOnline;
+        statusDot.className = 'status-dot' + (isOnline ? ' online' : '');
+        statusText.textContent = isOnline ? 'Online' : 'Offline';
+        if (!isOnline) statusText.textContent = 'Offline';
+    }
+
+    function addLog(message, type = 'info') {
+        const entry = document.createElement('div');
+        entry.className = 'log-entry log-' + type;
+        const time = new Date().toLocaleTimeString();
+        entry.textContent = `[${time}] ${message}`;
+        consoleBox.appendChild(entry);
+        consoleBox.scrollTop = consoleBox.scrollHeight;
+        if (consoleBox.children.length > 200) {
+            consoleBox.removeChild(consoleBox.firstChild);
+        }
+    }
+
+    function updateUptime() {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const h = Math.floor(elapsed / 3600);
+        const m = Math.floor((elapsed % 3600) / 60);
+        const s = elapsed % 60;
+        uptimeDisplay.textContent = h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s}s` : `${s}s`;
+    }
+
+    function updateStats() {
+        // Fetch sessions count from server via socket
+        socket.emit('get-sessions', (data) => {
+            if (data && data.total !== undefined) {
+                totalSessions.textContent = data.total;
+            }
+        });
+        // Also request active count
+        socket.emit('get-active', (count) => {
+            activeSessions.textContent = count || 0;
+        });
+    }
+
+    // ----- Event listeners -----
+    pairBtn.addEventListener('click', () => {
+        const number = phoneInput.value.trim().replace(/[^0-9]/g, '');
+        if (!number || number.length < 7) {
+            addLog('❌ Please enter a valid phone number (min 7 digits)', 'error');
+            return;
+        }
+        addLog(`🔗 Requesting pairing for ${number}...`, 'info');
+        pairCodeDisplay.textContent = '⏳ Generating code...';
+        pairCodeDisplay.className = 'pair-code-display empty';
+        socket.emit('pair-request', { userId, number });
+    });
+
+    logoutBtn.addEventListener('click', () => {
+        if (confirm('Log out this device? This will disconnect the bot.')) {
+            addLog('🚪 Logging out...', 'warning');
+            socket.emit('logout', userId);
+            pairCodeDisplay.textContent = '👋 Logged out';
+            pairCodeDisplay.className = 'pair-code-display empty';
+            setStatus(false);
+        }
+    });
+
+    refreshStatusBtn.addEventListener('click', () => {
+        addLog('🔄 Refreshing status...', 'info');
+        socket.emit('set-user', userId);
+        updateStats();
+    });
+
+    clearConsoleBtn.addEventListener('click', () => {
+        consoleBox.innerHTML = '';
+        addLog('🧹 Console cleared', 'info');
+    });
+
+    phoneInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') pairBtn.click();
+    });
+
+    // ----- Footer clock -----
+    function updateClock() {
+        document.getElementById('footerTime').textContent = new Date().toLocaleString();
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // ----- Uptime tick -----
+    setInterval(updateUptime, 1000);
+
+    // ----- Init -----
+    initSocket();
+
+    // Additional socket listeners for stats
+    socket.on('total-active', (count) => {
+        activeSessions.textContent = count || 0;
+    });
+
+    // Request total sessions on connect
+    socket.on('connect', () => {
+        setTimeout(() => updateStats(), 500);
+    });
+
+    // Update mode/ai/react status (you can extend this from server events)
+    // For now, just show placeholder
+    botMode.textContent = 'Mode: ' + (localStorage.getItem('exonMode') || 'PRIVATE');
+    botAI.textContent = 'AI: ' + (localStorage.getItem('exonAI') || 'OFF');
+    botReact.textContent = 'Auto-React: ' + (localStorage.getItem('exonReact') || 'OFF');
+
+    // Allow manual refresh of stats every 30s
+    setInterval(() => {
+        updateStats();
+    }, 30000);
+
+    addLog('🚀 Dashboard initialized for user: ' + userId, 'info');
+    addLog('💡 Enter a phone number and click "Pair" to connect', 'info');
+</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2be353a6add7521',t:'MTc4Njg1OTkxMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
