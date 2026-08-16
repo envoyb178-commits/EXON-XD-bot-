@@ -1,0 +1,122 @@
+// commands/chatmanagement.js
+
+
+module.exports = async function(sock, message, args, commandName) {
+    const chatId = message.key.remoteJid;
+    const isGroup = chatId?.endsWith('@g.us');
+
+    // Helper to react
+    const doReact = async (emoji) => {
+        try {
+            await sock.sendMessage(chatId, { react: { text: emoji, key: message.key } });
+        } catch (e) {}
+    };
+
+    // Check if the command is used in a private chat or group – we allow both
+    // But for export we need to ensure we have messages
+
+    switch (commandName) {
+        case 'clearchat':
+        case 'clear': {
+            // Clear all messages in the chat (delete the conversation from device)
+            await doReact('🧹');
+            try {
+                // Use chatModify to delete the chat (this removes the conversation from your WhatsApp)
+                // In Baileys, to delete a chat, we can use { delete: true }
+                await sock.chatModify({ delete: true }, chatId);
+                await sock.sendMessage(chatId, {
+                    text: '✅ Chat cleared successfully (conversation deleted).'
+                }, { quoted: message });
+            } catch (err) {
+                await doReact('❌');
+                await sock.sendMessage(chatId, {
+                    text: `❌ Failed to clear chat: ${err.message}`
+                }, { quoted: message });
+            }
+            break;
+        }
+
+        case 'deletechat':
+        case 'delete': {
+            // Delete the entire chat (same as clearing, but we keep it as separate command)
+            await doReact('🗑️');
+            try {
+                await sock.chatModify({ delete: true }, chatId);
+                await sock.sendMessage(chatId, {
+                    text: '✅ Chat deleted successfully.'
+                }, { quoted: message });
+            } catch (err) {
+                await doReact('❌');
+                await sock.sendMessage(chatId, {
+                    text: `❌ Failed to delete chat: ${err.message}`
+                }, { quoted: message });
+            }
+            break;
+        }
+
+        case 'exportchat':
+        case 'export': {
+            // Export chat history as a text file
+            await doReact('📤');
+            try {
+                // Load messages (limit 1000 for performance)
+                const messages = await sock.loadMessages(chatId, 1000);
+                if (!messages || messages.length === 0) {
+                    await doReact('❌');
+                    return await sock.sendMessage(chatId, {
+                        text: 'No messages found to export.'
+                    }, { quoted: message });
+                }
+
+                // Format messages into text
+                let exportText = `Chat Export - ${chatId}\n`;
+                exportText += `Exported on: ${moment().format('YYYY-MM-DD HH:mm:ss')}\n`;
+                exportText += `Total messages: ${messages.length}\n\n`;
+
+                // Reverse so oldest first
+                const sorted = messages.reverse();
+                for (const msg of sorted) {
+                    const sender = msg.pushName || msg.key.participant?.split('@')[0] || 'Unknown';
+                    const timestamp = msg.messageTimestamp ? moment.unix(msg.messageTimestamp).format('YYYY-MM-DD HH:mm:ss') : 'Unknown';
+                    let content = '';
+                    if (msg.message?.conversation) content = msg.message.conversation;
+                    else if (msg.message?.extendedTextMessage?.text) content = msg.message.extendedTextMessage.text;
+                    else if (msg.message?.imageMessage?.caption) content = msg.message.imageMessage.caption;
+                    else if (msg.message?.videoMessage?.caption) content = msg.message.videoMessage.caption;
+                    else content = `[${Object.keys(msg.message || {})[0] || 'media'}]`;
+                    exportText += `[${timestamp}] ${sender}: ${content}\n`;
+                }
+
+                // Save to temp file
+                const tmpDir = path.join(process.cwd(), 'tmp');
+                if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir);
+                const fileName = `chat_export_${Date.now()}.txt`;
+                const filePath = path.join(tmpDir, fileName);
+                fs.writeFileSync(filePath, exportText, 'utf-8');
+
+                // Send as document
+                await sock.sendMessage(chatId, {
+                    document: fs.readFileSync(filePath),
+                    mimetype: 'text/plain',
+                    fileName: fileName,
+                    caption: `📄 Chat export for ${isGroup ? 'group' : 'private chat'} (${messages.length} messages)`
+                }, { quoted: message });
+
+                // Cleanup
+                fs.unlinkSync(filePath);
+                await doReact('✅');
+
+            } catch (err) {
+                console.error('Export error:', err);
+                await doReact('❌');
+                await sock.sendMessage(chatId, {
+                    text: `❌ Failed to export chat: ${err.message}`
+                }, { quoted: message });
+            }
+            break;
+        }
+
+        default:
+            break;
+    }
+};
